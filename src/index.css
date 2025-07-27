@@ -114,14 +114,6 @@
   -webkit-text-fill-color: transparent;
 }
 
-.pastel-cyan-gradient {
-  background: linear-gradient(
-    180deg,
-    rgba(160, 220, 217, 0.9) 0%,
-    rgba(160, 220, 217, 0.4) 100%
-  );
-}
-
 /* canvas- styles */
 .canvas-loader {
   font-size: 10px;

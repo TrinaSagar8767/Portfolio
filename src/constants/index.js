@@ -42,166 +42,81 @@ export const navLinks = [
 
 const services = [
   {
-    title: "AI and Machine Learning",
+    title: "Web Developer",
     icon: web,
   },
   {
-    title: "Cybersecurity",
+    title: "React Native Developer",
     icon: mobile,
   },
   {
-    title: "Human-Computer Interaction",
+    title: "Backend Developer",
     icon: backend,
   },
   {
-    title: "Game Development and Artistic Applications",
+    title: "Content Creator",
     icon: creator,
   },
 ];
 
-{/* frameworks and tools */}
 const technologies = [
   {
-    name: "React",
+    name: "HTML 5",
     icon: html,
   },
   {
-    name: "Node.js",
+    name: "CSS 3",
     icon: css,
   },
   {
-    name: "Three.js",
+    name: "JavaScript",
     icon: javascript,
   },
   {
-    name: "AWS",
+    name: "TypeScript",
     icon: typescript,
   },
   {
-    name: "Docker",
+    name: "React JS",
     icon: reactjs,
   },
   {
-    name: "Git",
+    name: "Redux Toolkit",
     icon: redux,
   },
   {
-    name: "Unity",
+    name: "Tailwind CSS",
     icon: tailwind,
   },
   {
-    name: "Godot",
+    name: "Node JS",
     icon: nodejs,
   },
   {
-    name: "OpenGL",
+    name: "MongoDB",
     icon: mongodb,
   },
   {
-    name: "PyTorch",
+    name: "Three JS",
     icon: threejs,
   },
   {
-    name: "MySQL",
+    name: "git",
     icon: git,
   },
   {
-    name: "Bash",
+    name: "figma",
     icon: figma,
   },
   {
-    name: "Eclipse",
-    icon: docker,
-  },
-  {
-    name: "VS Code",
-    icon: docker,
-  },
-];
-
-{/* frameworks and tools */}
-const languages = [
-  {
-    name: "Python",
-    icon: html,
-  },
-  {
-    name: "C++",
-    icon: css,
-  },
-  {
-    name: "C",
-    icon: javascript,
-  },
-  {
-    name: "C#",
-    icon: typescript,
-  },
-  {
-    name: "Java",
-    icon: reactjs,
-  },
-  {
-    name: "Javascript",
-    icon: redux,
-  },
-  {
-    name: "Rust",
-    icon: tailwind,
-  },
-  {
-    name: "Go",
-    icon: nodejs,
-  },
-  {
-    name: "Haskell",
-    icon: mongodb,
-  },
-  {
-    name: "Prolog",
-    icon: threejs,
-  },
-  {
-    name: "Erlang",
-    icon: git,
-  },
-  {
-    name: "HTML",
-    icon: figma,
-  },
-  {
-    name: "CSS",
-    icon: docker,
-  },
-  {
-    name: "MySQL",
-    icon: docker,
-  },
-  {
-    name: "MATLAB",
-    icon: docker,
-  },
-  {
-    name: "PHP",
-    icon: docker,
-  },
-  {
-    name: "x86",
-    icon: docker,
-  },
-  {
-    name: "RISC-V",
-    icon: docker,
-  },
-  {
-    name: "R",
+    name: "docker",
     icon: docker,
   },
 ];
 
 const experiences = [
   {
-    title: "Senior year of high school",
+    title: "React.js Developer",
     company_name: "Starbucks",
     icon: starbucks,
     iconBg: "#383E56",
@@ -254,7 +169,6 @@ const experiences = [
   },
 ];
 
-{/*
 const testimonials = [
   {
     testimonial:
@@ -281,7 +195,6 @@ const testimonials = [
     image: "https://randomuser.me/api/portraits/women/6.jpg",
   },
 ];
-*/}
 
 const projects = [
   {

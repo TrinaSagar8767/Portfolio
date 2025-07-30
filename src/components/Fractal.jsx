@@ -45,7 +45,18 @@ function Fractal() {
       let slideProgress = Math.min(Math.max((elapsed - layerDelay) / slideDuration, 0), 1);
       const slideOffset = size * (1 - slideProgress);
 
-      ctx.fillStyle = `hsl(${currentLevel * 25}, 70%, 60%)`;
+      {/* Determine color based on level */}
+      const baseHue = 180; // soft cyan
+      const hueShiftPerLevel = 5; // shift toward deeper blue
+      const baseLightness = 75;
+      const lightnessDecreasePerLevel = 3;
+
+      const hue = baseHue + currentLevel * hueShiftPerLevel;     // becomes more blue
+      const lightness = Math.max(10, baseLightness - currentLevel * lightnessDecreasePerLevel);
+      const saturation = Math.min(80, 50 + currentLevel * 3);
+
+      ctx.fillStyle = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+
       ctx.fillRect(0, slideOffset, size, -size);
 
       const newSize = size * Math.sqrt(0.5);
@@ -75,13 +86,19 @@ function Fractal() {
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      drawTree(ctx, canvas.width / 2 - 50, canvas.height - 80, 100, 0, 0, elapsed);
+      // Draw a square underneath the first one (the trunk)
+      const trunkX = canvas.width / 2 - 100;
+      const trunkY = canvas.height - 220;
+      const trunkSize = 130;
+      const underSquareHeight = 140; // Height of the square underneath
 
       ctx.save();
-      ctx.translate(canvas.width / 2 + 50, canvas.height - 80);
-      ctx.scale(-1, 1);
-      drawTree(ctx, 0, 0, 100, 0, 0, elapsed);
+      ctx.fillStyle = "hsl(0, 0%, 30%)"; // A dark color for the base
+      ctx.fillRect(trunkX, trunkY + trunkSize, trunkSize, -underSquareHeight);
       ctx.restore();
+
+      // Draw only the animated (left) tree
+      drawTree(ctx, trunkX, trunkY, trunkSize, 0, 0, elapsed);
 
       const currentLevelFloat = elapsed / slideDuration;
       const newLevel = Math.min(Math.floor(currentLevelFloat), maxLevels);
@@ -114,8 +131,8 @@ function Fractal() {
     >
       <canvas ref={canvasRef} className="absolute top-0 left-0 z-0" />
       <div className="relative z-10 p-8 text-white">
-        <h2 className="text-4xl font-bold">My Creative Code</h2>
-        <p className="mt-2 text-lg">An animated fractal tree powered by math, art, and code.</p>
+        <h2 className="text-4xl font-bold">Programming Languages</h2>
+        <p className="mt-2 text-lg">Like a tree, coding skills grow with time.</p>
       </div>
     </motion.section>
   );

@@ -35,7 +35,10 @@ function Fractal() {
     startTimeRef.current = null;
 
     const drawTree = (ctx, x, y, size, angle, currentLevel, elapsed) => {
-      if (currentLevel > levelRef.current) return;
+      if (currentLevel > levelRef.current){
+
+        return;
+      } 
 
       ctx.save();
       ctx.translate(x, y);
@@ -81,6 +84,7 @@ function Fractal() {
     };
 
     const animate = (timestamp) => {
+      //called each frame recursively
       if (!startTimeRef.current) startTimeRef.current = timestamp;
       const elapsed = timestamp - startTimeRef.current;
 
@@ -93,7 +97,7 @@ function Fractal() {
       const underSquareHeight = 140; // Height of the square underneath
 
       ctx.save();
-      ctx.fillStyle = "hsl(0, 0%, 30%)"; // A dark color for the base
+      ctx.fillStyle = "hsla(194, 80%, 84%, 1.00)"; // A dark color for the base
       ctx.fillRect(trunkX, trunkY + trunkSize, trunkSize, -underSquareHeight);
       ctx.restore();
 
@@ -109,6 +113,12 @@ function Fractal() {
 
       if (newLevel < maxLevels) {
         animationFrameIdRef.current = requestAnimationFrame(animate);
+      }
+      else if (newLevel === maxLevels){
+        ctx.save();
+        ctx.fillStyle = "hsla(0, 80%, 84%, 1.00)";
+        ctx.fillRect(trunkX + 150 , trunkY + trunkSize - 360, trunkSize, -underSquareHeight);
+        ctx.restore()
       }
     };
 
@@ -132,7 +142,7 @@ function Fractal() {
       <canvas ref={canvasRef} className="absolute top-0 left-0 z-0" />
       <div className="relative z-10 p-8 text-white">
         <h2 className="text-4xl font-bold">Programming Languages</h2>
-        <p className="mt-2 text-lg">Like a tree, coding skills grow with time.</p>
+        <p className="mt-2 text-lg">Like a tree, coding skills start small but grow with time.</p>
       </div>
     </motion.section>
   );

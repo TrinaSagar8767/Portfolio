@@ -16,6 +16,17 @@ function Fractal() {
   const maxLevels = 10;
   const slideDuration = 500;
 
+  //const for fruit state
+  const fruitState = useRef({
+    active: false,
+    x: 0,
+    y: 0,
+    size: 30,
+    vy: 0,
+    exploding: false,
+    particles: []
+  });
+
   useEffect(() => {
     if (isInView) setStartAnimation(true);
   }, [isInView]);
@@ -34,11 +45,11 @@ function Fractal() {
     levelRef.current = 0;
     startTimeRef.current = null;
 
-    const drawTree = (ctx, x, y, size, angle, currentLevel, elapsed) => {
-      if (currentLevel > levelRef.current){
+    const drawTree = (ctx, x, y, size, angle, currentLevel, elapsed) => { //draw tree, called recursively by animation function
+      if (currentLevel > levelRef.current) {
 
         return;
-      } 
+      }
 
       ctx.save();
       ctx.translate(x, y);
@@ -48,7 +59,7 @@ function Fractal() {
       let slideProgress = Math.min(Math.max((elapsed - layerDelay) / slideDuration, 0), 1);
       const slideOffset = size * (1 - slideProgress);
 
-      {/* Determine color based on level */}
+      {/* Determine color based on level */ }
       const baseHue = 180; // soft cyan
       const hueShiftPerLevel = 5; // shift toward deeper blue
       const baseLightness = 75;
@@ -114,11 +125,66 @@ function Fractal() {
       if (newLevel < maxLevels) {
         animationFrameIdRef.current = requestAnimationFrame(animate);
       }
-      else if (newLevel === maxLevels){
-        ctx.save();
-        ctx.fillStyle = "hsla(0, 80%, 84%, 1.00)";
-        ctx.fillRect(trunkX + 150 , trunkY + trunkSize - 360, trunkSize, -underSquareHeight);
-        ctx.restore()
+      else if (newLevel === maxLevels) {
+        // Start fruit drop once
+        if (!fruitState.current.active) {
+          fruitState.current.active = true;
+          fruitState.current.x = trunkX + trunkSize / 2 + 200;
+          fruitState.current.y = trunkY + trunkSize - 300;
+          fruitState.current.size = 70;
+          fruitState.current.vy = 0;
+          fruitState.current.exploding = false;
+          fruitState.current.particles = [];
+        }
+
+        const fruit = fruitState.current;
+
+        if (!fruit.exploding) {
+          // gravity drop
+          fruit.vy += 0.5;  // gravity acceleration
+          fruit.y += fruit.vy;
+
+          // ground collision at coordinates
+          if (fruit.y + fruit.size >= canvas.height - 10) { //at ground
+            fruit.exploding = true;
+            // create upward explosion particles
+            fruit.particles = Array.from({ length: 25 }, () => ({
+              x: fruit.x,
+              y: fruit.y,
+              vx: (Math.random() - 0.5) * 10, // slight horizontal spread
+              vy: -Math.random() * 15 - 2,    // only upward
+              size: 45,
+              life: 200 // frames
+            }));
+          } else {
+            // draw falling fruit
+            ctx.save();
+            ctx.fillStyle = "hsla(0, 80%, 84%, 1.0)";
+            ctx.fillRect(fruit.x, fruit.y, fruit.size, -fruit.size);
+            ctx.restore();
+          }
+        } else {
+          // Explosion phase: particles only move upward and fade
+          fruit.particles.forEach(p => {
+            p.x += p.vx;
+            p.y += p.vy * 2;
+            p.life--;
+
+            const alpha = Math.max(p.life / 60, 0); // fade out smoothly
+            ctx.save();
+            ctx.fillStyle = `hsla(0, 80%, 84%, ${alpha})`;
+            ctx.fillRect(p.x, p.y, p.size, -p.size);
+            ctx.restore();
+          });
+
+          // Remove dead particles
+          fruit.particles = fruit.particles.filter(p => p.life > 0);
+        }
+
+        // Keep animation going until all particles vanish
+        if (fruit.particles.length > 0 || !fruit.exploding) {
+          animationFrameIdRef.current = requestAnimationFrame(animate);
+        }
       }
     };
 
@@ -142,7 +208,7 @@ function Fractal() {
       <canvas ref={canvasRef} className="absolute top-0 left-0 z-0" />
       <div className="relative z-10 p-8 text-white">
         <h2 className="text-4xl font-bold">Programming Languages</h2>
-        <p className="mt-2 text-lg">Like a tree, coding skills start small but grow with time.</p>
+        <p className="mt-2 text-lg">Like a tree, coding skills start small but grow with time and care.</p>
       </div>
     </motion.section>
   );

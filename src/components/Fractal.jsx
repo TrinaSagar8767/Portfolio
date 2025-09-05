@@ -8,6 +8,7 @@ function Fractal() {
 
   const [startAnimation, setStartAnimation] = useState(false);
 
+  // Animation state
   const levelRef = useRef(0);
   const startTimeRef = useRef(null);
   const animationFrameIdRef = useRef(null);
@@ -15,19 +16,22 @@ function Fractal() {
   const maxLevels = 10;
   const slideDuration = 500;
 
+  // Fruit state
   const fruitState = useRef({
     active: false,
     x: 0,
     y: 0,
-    size: 70,
+    size: 30,
     vy: 0,
     exploding: false,
     particles: [],
-    jellyPhase: Math.random() * Math.PI * 2,
+    spawnedSecondary: false,
   });
 
+  // Secondary fruits that rain down with jelly wobble
   const secondaryFruits = useRef([]);
-  const languages = ["Python", "JavaScript", "C++", "Java", "Go", "Rust", "Ruby"];
+
+  const languages = ["JS", "Python", "C++", "Java", "Go", "Rust", "Ruby", "PHP"];
 
   useEffect(() => {
     if (isInView) setStartAnimation(true);
@@ -47,10 +51,6 @@ function Fractal() {
     levelRef.current = 0;
     startTimeRef.current = null;
 
-    const trunkX = canvas.width / 2 - 100;
-    const trunkY = canvas.height - 220;
-    const trunkSize = 130;
-
     const drawTree = (ctx, x, y, size, angle, currentLevel, elapsed) => {
       if (currentLevel > levelRef.current) return;
 
@@ -59,16 +59,23 @@ function Fractal() {
       ctx.rotate(angle);
 
       const layerDelay = currentLevel * slideDuration;
-      const slideProgress = Math.min(Math.max((elapsed - layerDelay) / slideDuration, 0), 1);
+      let slideProgress = Math.min(
+        Math.max((elapsed - layerDelay) / slideDuration, 0),
+        1
+      );
       const slideOffset = size * (1 - slideProgress);
 
+      // tree colors
       const baseHue = 180;
       const hueShiftPerLevel = 5;
       const baseLightness = 75;
       const lightnessDecreasePerLevel = 3;
 
       const hue = baseHue + currentLevel * hueShiftPerLevel;
-      const lightness = Math.max(10, baseLightness - currentLevel * lightnessDecreasePerLevel);
+      const lightness = Math.max(
+        10,
+        baseLightness - currentLevel * lightnessDecreasePerLevel
+      );
       const saturation = Math.min(80, 50 + currentLevel * 3);
 
       ctx.fillStyle = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
@@ -101,132 +108,155 @@ function Fractal() {
 
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Draw trunk base
+      // Trunk base
+      const trunkX = canvas.width / 2 - 100;
+      const trunkY = canvas.height - 220;
+      const trunkSize = 130;
+      const underSquareHeight = 140;
+
       ctx.save();
-      ctx.fillStyle = "hsla(194, 80%, 84%, 1.00)";
-      ctx.fillRect(trunkX, trunkY + trunkSize, trunkSize, -140);
+      ctx.fillStyle = "hsla(194, 80%, 84%, 1.0)";
+      ctx.fillRect(trunkX, trunkY + trunkSize, trunkSize, -underSquareHeight);
       ctx.restore();
+
+      // Draw tree
+      drawTree(ctx, trunkX, trunkY, trunkSize, 0, 0, elapsed);
 
       const currentLevelFloat = elapsed / slideDuration;
       const newLevel = Math.min(Math.floor(currentLevelFloat), maxLevels);
-      if (newLevel > levelRef.current) levelRef.current = newLevel;
 
-      drawTree(ctx, trunkX, trunkY, trunkSize, 0, 0, elapsed);
-
-      const fruit = fruitState.current;
-
-      // Initialize main fruit after tree finishes
-      if (levelRef.current >= maxLevels && !fruit.active) {
-        fruit.active = true;
-        fruit.x = trunkX + trunkSize / 2 + 200;
-        fruit.y = trunkY + trunkSize - 300;
-        fruit.vy = 0;
-        fruit.exploding = false;
-        fruit.particles = [];
+      if (newLevel > levelRef.current) {
+        levelRef.current = newLevel;
       }
 
-      // Animate main fruit
-      if (fruit.active && !fruit.exploding) {
-        fruit.vy += 0.5;
-        fruit.y += fruit.vy;
+      if (newLevel < maxLevels) {
+        animationFrameIdRef.current = requestAnimationFrame(animate);
+      } else if (newLevel === maxLevels) {
+        const fruit = fruitState.current;
 
-        const wobble = Math.sin(performance.now() / 200 + fruit.jellyPhase) * 0.2;
-        ctx.save();
-        ctx.translate(fruit.x + fruit.size / 2, fruit.y + fruit.size / 2);
-        ctx.scale(1 + wobble, 1 - wobble);
-        ctx.translate(-(fruit.x + fruit.size / 2), -(fruit.y + fruit.size / 2));
-        ctx.fillStyle = "hsla(340, 80%, 84%, 1.0)";
-        ctx.fillRect(fruit.x, fruit.y, fruit.size, -fruit.size);
-        ctx.restore();
-
-        if (fruit.y + fruit.size >= canvas.height - 10) {
-          fruit.exploding = true;
-
-          // Explosion particles
-          fruit.particles = Array.from({ length: 25 }, () => ({
-            x: fruit.x + fruit.size / 2,
-            y: fruit.y,
-            vx: (Math.random() - 0.5) * 10,
-            vy: -Math.random() * 15 - 2,
-            size: 45,
-            life: 200,
-            jellyPhase: Math.random() * Math.PI * 2,
-            language: languages[Math.floor(Math.random() * languages.length)],
-            secondarySpawned: false
-          }));
+        // Initialize fruit
+        if (!fruit.active) {
+          fruit.active = true;
+          fruit.x = trunkX + trunkSize / 2 + 200;
+          fruit.y = trunkY + trunkSize - 300;
+          fruit.size = 70;
+          fruit.vy = 0;
+          fruit.exploding = false;
+          fruit.particles = [];
+          fruit.spawnedSecondary = false;
         }
-      }
 
-      // Animate explosion particles
-      if (fruit.exploding) {
-        fruit.particles.forEach((p) => {
-          p.x += p.vx;
-          p.y += p.vy;
-          p.vy += 0.5;
-          p.life--;
+        if (!fruit.exploding) {
+          // Drop fruit
+          fruit.vy += 0.5;
+          fruit.y += fruit.vy;
 
-          const alpha = Math.max(p.life / 200, 0);
-          const wobble = Math.sin(performance.now() / 200 + p.jellyPhase) * 0.2;
-          ctx.save();
-          ctx.translate(p.x, p.y);
-          ctx.scale(1 + wobble, 1 - wobble);
-          ctx.translate(-p.x, -p.y);
-          ctx.fillStyle = `hsla(340, 80%, 84%, ${alpha})`;
-          ctx.fillRect(p.x, p.y, p.size, -p.size);
-          ctx.restore();
-
-          // Spawn secondary fruits with horizontal spacing
-          if (!p.secondarySpawned && p.vy > 0) {
-            p.secondarySpawned = true;
-            secondaryFruits.current.push({
-              x: p.x - p.size / 2 + (Math.random() - 0.5) * 60, // horizontal offset ±30px
-              y: p.y - p.size / 2 - Math.random() * 40, // small vertical offset
-              size: p.size / 1.5,
-              vy: 0,
-              jellyPhase: Math.random() * Math.PI * 2,
-              label: p.language
-            });
+          if (fruit.y + fruit.size >= canvas.height - 10) {
+            fruit.exploding = true;
+            fruit.particles = Array.from({ length: 25 }, () => ({
+              x: fruit.x,
+              y: fruit.y,
+              vx: (Math.random() - 0.5) * 10,
+              vy: -Math.random() * 15 - 2,
+              size: 45,
+              life: 200,
+            }));
+          } else {
+            ctx.save();
+            ctx.fillStyle = "hsla(0, 80%, 84%, 1.0)";
+            ctx.fillRect(fruit.x, fruit.y, fruit.size, -fruit.size);
+            ctx.restore();
           }
+        } else {
+          // Explosion particles
+          fruit.particles.forEach((p) => {
+            p.x += p.vx;
+            p.y += p.vy * 2;
+            p.life--;
+
+            const alpha = Math.max(p.life / 60, 0);
+            ctx.save();
+            ctx.fillStyle = `hsla(0, 80%, 84%, ${alpha})`;
+            ctx.fillRect(p.x, p.y, p.size, -p.size);
+            ctx.restore();
+          });
+
+          fruit.particles = fruit.particles.filter((p) => p.life > 0);
+
+          // Spawn secondary fruits ONCE, evenly spaced
+          if (!fruit.spawnedSecondary) {
+            fruit.spawnedSecondary = true;
+
+            const spreadWidth = canvas.width * 0.6;
+            const baseX = canvas.width * 0.2;
+            const numFruits = 10;
+            const spacing = spreadWidth / numFruits;
+
+            for (let i = 0; i < numFruits; i++) {
+              const x =
+                baseX + i * spacing + (Math.random() - 0.5) * 30; // jitter
+              const y = trunkY - Math.random() * 200; // high above tree
+              const label = languages[i % languages.length];
+
+              secondaryFruits.current.push({
+                x,
+                y,
+                size: 40,
+                vy: 0,
+                jellyPhase: Math.random() * Math.PI * 2,
+                label,
+              });
+            }
+          }
+        }
+
+        // Animate secondary fruits
+        secondaryFruits.current.forEach((fruit) => {
+          fruit.vy += 0.3;
+          fruit.y += fruit.vy;
+
+          // ground collision (stop at bottom)
+          if (fruit.y + fruit.size / 2 >= canvas.height - 20) {
+            fruit.y = canvas.height - 20 - fruit.size / 2;
+            fruit.vy = 0;
+          }
+
+          fruit.jellyPhase += 0.2;
+          const scaleX = 1 + 0.1 * Math.sin(fruit.jellyPhase);
+          const scaleY = 1 - 0.1 * Math.sin(fruit.jellyPhase);
+
+          ctx.save();
+          ctx.translate(fruit.x, fruit.y);
+          ctx.scale(scaleX, scaleY);
+          ctx.fillStyle = "hsla(0, 80%, 84%, 0.9)";
+          ctx.fillRect(-fruit.size / 2, -fruit.size / 2, fruit.size, fruit.size);
+
+          // Label text
+          ctx.fillStyle = "black";
+          ctx.font = "14px Arial";
+          ctx.textAlign = "center";
+          ctx.textBaseline = "middle";
+          ctx.fillText(fruit.label, 0, 0);
+          ctx.restore();
         });
 
-        fruit.particles = fruit.particles.filter((p) => p.life > 0);
-      }
-
-      // Animate secondary falling fruits
-      secondaryFruits.current.forEach((f) => {
-        f.vy += 0.5;
-        f.y += f.vy;
-
-        if (f.y + f.size >= canvas.height - 10) {
-          f.y = canvas.height - 10 - f.size;
-          f.vy = 0;
+        // Keep animating
+        if (
+          fruit.particles.length > 0 ||
+          secondaryFruits.current.length > 0 ||
+          !fruit.exploding
+        ) {
+          animationFrameIdRef.current = requestAnimationFrame(animate);
         }
-
-        const wobble = Math.sin(performance.now() / 200 + f.jellyPhase) * 0.2;
-        ctx.save();
-        ctx.translate(f.x + f.size / 2, f.y + f.size / 2);
-        ctx.scale(1 + wobble, 1 - wobble);
-        ctx.translate(-(f.x + f.size / 2), -(f.y + f.size / 2));
-
-        ctx.fillStyle = "hsla(200, 80%, 70%, 1.0)";
-        ctx.fillRect(f.x, f.y, f.size, f.size);
-
-        ctx.fillStyle = "white";
-        ctx.font = `${f.size / 3}px sans-serif`;
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.fillText(f.label, f.x + f.size / 2, f.y + f.size / 2);
-
-        ctx.restore();
-      });
-
-      animationFrameIdRef.current = requestAnimationFrame(animate);
+      }
     };
 
     animationFrameIdRef.current = requestAnimationFrame(animate);
 
     return () => {
-      if (animationFrameIdRef.current) cancelAnimationFrame(animationFrameIdRef.current);
+      if (animationFrameIdRef.current) {
+        cancelAnimationFrame(animationFrameIdRef.current);
+      }
     };
   }, [startAnimation]);
 

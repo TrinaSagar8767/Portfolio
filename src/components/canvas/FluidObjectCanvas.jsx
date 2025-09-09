@@ -2,38 +2,29 @@ import * as THREE from "three";
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
 import { useRef, useMemo } from "react";
 
-function CrystalLaptop({ rows = 10, cols = 16 }) {
+function CrystalLaptop({ rows = 5, cols = 12 }) {
   const screenRef = useRef();
   const { mouse } = useThree();
 
-  const crystals = useMemo(() => {
+  // Create rectangular keys for the screen
+  const screenKeys = useMemo(() => {
     const arr = [];
-    const spacing = 0.35;
+    const spacing = 0.3;
     for (let i = 0; i < rows; i++) {
       for (let j = 0; j < cols; j++) {
         const x = (j - cols / 2) * spacing;
-        const y = (i - rows / 2) * spacing;
-        const height = 0.15 + Math.random() * 0.1;
-        const rot = Math.random() * 0.3;
-        arr.push({ pos: [x, y, 0], height, rot });
+        const y = -(i - rows / 2) * spacing;
+        arr.push({ pos: [x, y, 0] });
       }
     }
     return arr;
   }, [rows, cols]);
 
-  useFrame(({ clock }) => {
-    const t = clock.getElapsedTime();
+  useFrame(() => {
     if (screenRef.current) {
       screenRef.current.rotation.y = mouse.x * 0.1;
       screenRef.current.rotation.x = -mouse.y * 0.1;
     }
-    screenRef.current.children.forEach((child, idx) => {
-      if (child.isMesh && child.geometry.type === "ConeGeometry") {
-        child.position.z = Math.sin(t * 2 + idx * 0.2) * 0.08;
-        child.material.emissiveIntensity =
-          0.4 + Math.sin(t * 3 + idx * 0.25) * 0.2;
-      }
-    });
   });
 
   return (
@@ -75,14 +66,12 @@ function CrystalLaptop({ rows = 10, cols = 16 }) {
         )}
       </group>
 
-      {/* Screen */}
+      {/* Screen with keys instead of cones */}
       <group
         ref={screenRef}
         position={[0, 0.5, -0.75]} // hinge at back edge of keyboard
       >
-        <group rotation={[-Math.PI / 2 + Math.PI / 10, 0, 0]}> 
-          {/* Tilt ~100° from keyboard plane */}
-
+        <group rotation={[-Math.PI / 2 + Math.PI / 10, 0, 0]}>
           {/* Screen frame */}
           <mesh position={[0, 0.5, 0]}>
             <boxGeometry args={[cols * 0.35, rows * 0.35, 0.4]} />
@@ -109,20 +98,18 @@ function CrystalLaptop({ rows = 10, cols = 16 }) {
             />
           </mesh>
 
-          {/* Crystal pixels */}
-          {crystals.map(({ pos, height, rot }, i) => (
-            <mesh key={i} position={pos} rotation={[0, 0, rot]}>
-              <coneGeometry args={[0.15, height, 4]} />
+          {/* Rectangular keys replacing crystal pixels */}
+          {screenKeys.map(({ pos }, i) => (
+            <mesh key={i} position={[pos[0], pos[1], 0.11]}>
+              <boxGeometry args={[0.28, 0.25, 0.15]} />
               <meshStandardMaterial
-                color={new THREE.Color(
-                  `hsl(${200 + Math.random() * 40},70%,60%)`
-                )}
+                color="#a0d8ff"
                 transparent
-                opacity={0.6}
+                opacity={0.5}
                 roughness={0.05}
                 metalness={0.8}
                 emissive={"#3fa9ff"}
-                emissiveIntensity={0.5}
+                emissiveIntensity={0.3}
               />
             </mesh>
           ))}

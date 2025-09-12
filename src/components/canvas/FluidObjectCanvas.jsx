@@ -4,34 +4,38 @@ import { useRef, useMemo } from "react";
 
 function CrystalLaptop({ rows = 5, cols = 12 }) {
   const keyboardRef = useRef();
+  const spacing = 0.3;
 
-  // Keyboard keys (previously “screen keys”)
+  // Keyboard keys
   const keyboardKeys = useMemo(() => {
     const arr = [];
-    const spacing = 0.3;
+    const xOffset = (cols - 1) * spacing * 0.5;
+    const zOffset = (rows - 1) * spacing * 0.5;
     for (let i = 0; i < rows; i++) {
       for (let j = 0; j < cols; j++) {
-        const x = (j - cols / 2) * spacing;
-        const y = -(i - rows / 2) * spacing;
-        arr.push({ pos: [x, y, 0] });
+        const x = j * spacing - xOffset;
+        const z = i * spacing - zOffset;
+        arr.push({ pos: [x, 0, z] });
       }
     }
     return arr;
-  }, [rows, cols]);
+  }, [rows, cols, spacing]);
 
   useFrame(({ mouse }) => {
     if (keyboardRef.current) {
-      // Slight rotation of the keyboard for a crystal effect
       keyboardRef.current.rotation.y = mouse.x * 0.05;
       keyboardRef.current.rotation.x = -mouse.y * 0.05;
     }
   });
 
+  const baseWidth = cols * spacing;
+  const baseDepth = rows * spacing + 0.5;
+
   return (
     <group>
       {/* Base plate */}
       <mesh position={[0, -0.1, 0]}>
-        <boxGeometry args={[cols * 0.35, 0.2, 2]} />
+        <boxGeometry args={[baseWidth, 0.2, baseDepth]} />
         <meshStandardMaterial
           color="#88cfff"
           transparent
@@ -41,10 +45,10 @@ function CrystalLaptop({ rows = 5, cols = 12 }) {
         />
       </mesh>
 
-      {/* Keyboard (was screen keys) */}
+      {/* Keyboard */}
       <group ref={keyboardRef} position={[0, 0.05, 0]}>
         {keyboardKeys.map(({ pos }, i) => (
-          <mesh key={i} position={[pos[0], 0, pos[1]]}>
+          <mesh key={i} position={pos}>
             <boxGeometry args={[0.28, 0.15, 0.25]} />
             <meshStandardMaterial
               color="#a0d8ff"

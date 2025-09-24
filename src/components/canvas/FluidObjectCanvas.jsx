@@ -2,24 +2,37 @@ import * as THREE from "three";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { useRef, useMemo } from "react";
 
-function CrystalLaptop({ rows = 5, cols = 12 }) {
+function CrystalLaptop({ rows = 4, cols = 12 }) {
   const keyboardRef = useRef();
-  const spacing = 0.3;
+  const spacing = 0.32;
+  const keyWidth = 0.28;
+  const keyHeight = 0.15;
+  const keyDepth = 0.25;
 
-  // Keyboard keys
+  // how many grid slots the spacebar spans
+  const spacebarUnits = 6;
+
+  // Generate keyboard keys, skipping spacebar gap
   const keyboardKeys = useMemo(() => {
     const arr = [];
     const xOffset = (cols - 1) * spacing * 0.5;
     const zOffset = (rows - 1) * spacing * 0.5;
+
     for (let i = 0; i < rows; i++) {
       for (let j = 0; j < cols; j++) {
+        if (i === rows - 1) {
+          // define the span for the spacebar
+          const left = Math.floor((cols - spacebarUnits) / 2);
+          const right = left + spacebarUnits - 1;
+          if (j >= left && j <= right) continue; // skip spacebar zone
+        }
         const x = j * spacing - xOffset;
         const z = i * spacing - zOffset;
         arr.push({ pos: [x, 0, z] });
       }
     }
     return arr;
-  }, [rows, cols, spacing]);
+  }, [rows, cols, spacing, spacebarUnits]);
 
   useFrame(({ mouse }) => {
     if (keyboardRef.current) {
@@ -28,13 +41,19 @@ function CrystalLaptop({ rows = 5, cols = 12 }) {
     }
   });
 
-  const baseWidth = cols * spacing;
+  const baseWidth = cols * spacing + 0.5;
   const baseDepth = rows * spacing + 0.5;
+
+  // bottom row Z position
+  const bottomRowZ = (rows - 1) * spacing - (rows - 1) * spacing * 0.5;
+
+  // spacebar width fills exactly the skipped region
+  const spacebarWidth = spacebarUnits * spacing;
 
   return (
     <group>
       {/* Base plate */}
-      <mesh position={[0, -0.1, 0]}>
+      <mesh position={[0, -0.12, 0]}>
         <boxGeometry args={[baseWidth, 0.2, baseDepth]} />
         <meshStandardMaterial
           color="#88cfff"
@@ -49,18 +68,32 @@ function CrystalLaptop({ rows = 5, cols = 12 }) {
       <group ref={keyboardRef} position={[0, 0.05, 0]}>
         {keyboardKeys.map(({ pos }, i) => (
           <mesh key={i} position={pos}>
-            <boxGeometry args={[0.28, 0.15, 0.25]} />
+            <boxGeometry args={[keyWidth, keyHeight, keyDepth]} />
             <meshStandardMaterial
               color="#a0d8ff"
               transparent
-              opacity={0.6}
+              opacity={0.65}
               roughness={0.05}
               metalness={0.8}
               emissive="#3fa9ff"
-              emissiveIntensity={0.3}
+              emissiveIntensity={0.35}
             />
           </mesh>
         ))}
+
+        {/* Spacebar */}
+        <mesh position={[0, 0, bottomRowZ]}>
+          <boxGeometry args={[spacebarWidth, keyHeight, keyDepth]} />
+          <meshStandardMaterial
+            color="#a0d8ff"
+            transparent
+            opacity={0.75}
+            roughness={0.05}
+            metalness={0.85}
+            emissive="#3fa9ff"
+            emissiveIntensity={0.4}
+          />
+        </mesh>
       </group>
     </group>
   );

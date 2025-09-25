@@ -7,45 +7,42 @@ function CrystalLaptop() {
   const keyHeight = 0.15;
   const keyDepth = 0.25;
 
-  // spacing between keys horizontally and vertically
-  const xSpacing = 0.04;
-  const zSpacing = 0.32;
+  // Fixed keyboard width
+  const totalWidth = 7.5;
+  const rowCount = 5;
 
-  // Each row: array of key widths (in units)
+  // Approximate layout (relative weights for key widths per row)
   const layout = [
-    // Row 1
-    [0.6, ...Array(12).fill(0.28)],
-    // Row 2
-    [0.6, ...Array(12).fill(0.28), 0.6],
-    // Row 3
-    [0.7, ...Array(11).fill(0.28), 0.7],
-    // Row 4
-    [0.9, ...Array(10).fill(0.28), 0.9],
-    // Bottom row
-    [0.5, 0.5, 0.5, 0.5, 1.8, 0.5, 0.5, 0.5, 0.5],
+    [1, ...Array(12).fill(1)],                  // Row 1
+    [1.2, ...Array(11).fill(1), 1.2],          // Row 2
+    [1.4, ...Array(10).fill(1), 1.4],          // Row 3
+    [1.6, ...Array(9).fill(1), 1.6],           // Row 4
+    [1, 1, 1.5, 4, 1.5, 1, 1],                 // Bottom row
   ];
 
-  // Generate key positions
+  // Generate key positions + normalized widths
   const keyboardKeys = useMemo(() => {
     const keys = [];
-    const rowCount = layout.length;
+    const zSpacing = 0.35;
     const zOffset = ((rowCount - 1) * zSpacing) / 2;
 
     layout.forEach((row, rowIndex) => {
-      const rowWidth = row.reduce((sum, w) => sum + w, 0) + xSpacing * (row.length - 1);
-      let currentX = -rowWidth / 2;
+      const weightSum = row.reduce((a, b) => a + b, 0);
+      const unitWidth = totalWidth / weightSum;
+      let currentX = -totalWidth / 2;
 
-      row.forEach((width) => {
+      row.forEach((w) => {
+        const width = w * unitWidth;
         keys.push({
           pos: [currentX + width / 2, 0, rowIndex * zSpacing - zOffset],
           width,
         });
-        currentX += width + xSpacing;
+        currentX += width;
       });
     });
 
     return keys;
-  }, [layout, xSpacing, zSpacing]);
+  }, [layout, totalWidth, rowCount]);
 
   useFrame(({ mouse }) => {
     if (keyboardRef.current) {
@@ -54,16 +51,21 @@ function CrystalLaptop() {
     }
   });
 
-  // Base plate size
-  const baseWidth = 8;
-  const baseDepth = layout.length * zSpacing + 0.5;
+  // Base plate matches total width
+  const baseDepth = rowCount * 0.35 + 0.4;
 
   return (
     <group>
       {/* Base plate */}
       <mesh position={[0, -0.12, 0]}>
-        <boxGeometry args={[baseWidth, 0.2, baseDepth]} />
-        <meshStandardMaterial color="#88cfff" transparent opacity={0.25} roughness={0.2} metalness={0.7} />
+        <boxGeometry args={[totalWidth + 0.5, 0.2, baseDepth]} />
+        <meshStandardMaterial
+          color="#88cfff"
+          transparent
+          opacity={0.25}
+          roughness={0.2}
+          metalness={0.7}
+        />
       </mesh>
 
       {/* Keys */}
@@ -74,7 +76,7 @@ function CrystalLaptop() {
             <meshStandardMaterial
               color="#a0d8ff"
               transparent
-              opacity={0.7 + Math.random() * 0.05}
+              opacity={0.72}
               roughness={0.05}
               metalness={0.8}
               emissive="#3fa9ff"
@@ -89,7 +91,7 @@ function CrystalLaptop() {
 
 export default function HeroVisual() {
   return (
-    <Canvas camera={{ position: [0, 3, 6], fov: 50 }}>
+    <Canvas camera={{ position: [0, 3, 7], fov: 50 }}>
       <ambientLight intensity={0.6} />
       <directionalLight position={[5, 5, 5]} intensity={1.2} />
       <pointLight position={[-5, -2, -5]} intensity={1.2} color={"#4ac9ff"} />

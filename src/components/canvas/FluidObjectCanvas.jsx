@@ -2,37 +2,50 @@ import * as THREE from "three";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { useRef, useMemo } from "react";
 
-function CrystalLaptop({ rows = 4, cols = 12 }) {
+function CrystalLaptop() {
   const keyboardRef = useRef();
-  const spacing = 0.32;
-  const keyWidth = 0.28;
   const keyHeight = 0.15;
   const keyDepth = 0.25;
 
-  // how many grid slots the spacebar spans
-  const spacebarUnits = 6;
+  // spacing between keys horizontally and vertically
+  const xSpacing = 0.04;
+  const zSpacing = 0.32;
 
-  // Generate keyboard keys, skipping spacebar gap
+  // Each row: array of key widths (in units)
+  const layout = [
+    // Row 1
+    [0.6, ...Array(12).fill(0.28)],
+    // Row 2
+    [0.6, ...Array(12).fill(0.28), 0.6],
+    // Row 3
+    [0.7, ...Array(11).fill(0.28), 0.7],
+    // Row 4
+    [0.9, ...Array(10).fill(0.28), 0.9],
+    // Bottom row
+    [0.5, 0.5, 0.5, 0.5, 1.8, 0.5, 0.5, 0.5, 0.5],
+  ];
+
+  // Generate key positions
   const keyboardKeys = useMemo(() => {
-    const arr = [];
-    const xOffset = (cols - 1) * spacing * 0.5;
-    const zOffset = (rows - 1) * spacing * 0.5;
+    const keys = [];
+    const rowCount = layout.length;
+    const zOffset = ((rowCount - 1) * zSpacing) / 2;
 
-    for (let i = 0; i < rows; i++) {
-      for (let j = 0; j < cols; j++) {
-        if (i === rows - 1) {
-          // define the span for the spacebar
-          const left = Math.floor((cols - spacebarUnits) / 2);
-          const right = left + spacebarUnits - 1;
-          if (j >= left && j <= right) continue; // skip spacebar zone
-        }
-        const x = j * spacing - xOffset;
-        const z = i * spacing - zOffset;
-        arr.push({ pos: [x, 0, z] });
-      }
-    }
-    return arr;
-  }, [rows, cols, spacing, spacebarUnits]);
+    layout.forEach((row, rowIndex) => {
+      const rowWidth = row.reduce((sum, w) => sum + w, 0) + xSpacing * (row.length - 1);
+      let currentX = -rowWidth / 2;
+
+      row.forEach((width) => {
+        keys.push({
+          pos: [currentX + width / 2, 0, rowIndex * zSpacing - zOffset],
+          width,
+        });
+        currentX += width + xSpacing;
+      });
+    });
+
+    return keys;
+  }, [layout, xSpacing, zSpacing]);
 
   useFrame(({ mouse }) => {
     if (keyboardRef.current) {
@@ -41,38 +54,27 @@ function CrystalLaptop({ rows = 4, cols = 12 }) {
     }
   });
 
-  const baseWidth = cols * spacing + 0.5;
-  const baseDepth = rows * spacing + 0.5;
-
-  // bottom row Z position
-  const bottomRowZ = (rows - 1) * spacing - (rows - 1) * spacing * 0.5;
-
-  // spacebar width fills exactly the skipped region
-  const spacebarWidth = spacebarUnits * spacing;
+  // Base plate size
+  const baseWidth = 8;
+  const baseDepth = layout.length * zSpacing + 0.5;
 
   return (
     <group>
       {/* Base plate */}
       <mesh position={[0, -0.12, 0]}>
         <boxGeometry args={[baseWidth, 0.2, baseDepth]} />
-        <meshStandardMaterial
-          color="#88cfff"
-          transparent
-          opacity={0.3}
-          roughness={0.1}
-          metalness={0.7}
-        />
+        <meshStandardMaterial color="#88cfff" transparent opacity={0.25} roughness={0.2} metalness={0.7} />
       </mesh>
 
-      {/* Keyboard */}
+      {/* Keys */}
       <group ref={keyboardRef} position={[0, 0.05, 0]}>
-        {keyboardKeys.map(({ pos }, i) => (
+        {keyboardKeys.map(({ pos, width }, i) => (
           <mesh key={i} position={pos}>
-            <boxGeometry args={[keyWidth, keyHeight, keyDepth]} />
+            <boxGeometry args={[width, keyHeight, keyDepth]} />
             <meshStandardMaterial
               color="#a0d8ff"
               transparent
-              opacity={0.65}
+              opacity={0.7 + Math.random() * 0.05}
               roughness={0.05}
               metalness={0.8}
               emissive="#3fa9ff"
@@ -80,20 +82,6 @@ function CrystalLaptop({ rows = 4, cols = 12 }) {
             />
           </mesh>
         ))}
-
-        {/* Spacebar */}
-        <mesh position={[0, 0, bottomRowZ]}>
-          <boxGeometry args={[spacebarWidth, keyHeight, keyDepth]} />
-          <meshStandardMaterial
-            color="#a0d8ff"
-            transparent
-            opacity={0.75}
-            roughness={0.05}
-            metalness={0.85}
-            emissive="#3fa9ff"
-            emissiveIntensity={0.4}
-          />
-        </mesh>
       </group>
     </group>
   );

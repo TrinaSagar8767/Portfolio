@@ -93,7 +93,7 @@ export default function HeroVisual() {
       <pointLight position={[3, -2, 5]} intensity={0.8} color={"#ff8cff"} />
       <directionalLight position={[0, 5, -5]} intensity={0.6} color={"#ffffff"} />
 
-      <group position={[0, -2, 0]}>
+      <group position={[0, -3, 0]}>
         <CrystalLaptop />
       </group>
     </Canvas>

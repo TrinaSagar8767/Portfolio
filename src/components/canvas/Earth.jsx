@@ -1,4 +1,4 @@
-import React, { Suspense, useMemo } from "react";
+import React, { Suspense, useMemo, useRef } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Preload, Stars } from "@react-three/drei";
 import * as THREE from "three";
@@ -6,13 +6,18 @@ import * as THREE from "three";
 import CanvasLoader from "../Loader";
 
 const PulseLine = ({ start, end }) => {
-  const pulseRef = React.useRef();
+  const pulseRef = useRef();
   const dir = new THREE.Vector3().subVectors(end, start);
   const length = dir.length();
   dir.normalize();
 
+  const geometry = useMemo(() => {
+    const points = [start, end];
+    return new THREE.BufferGeometry().setFromPoints(points);
+  }, [start, end]);
+
   useFrame(({ clock }) => {
-    const t = (clock.getElapsedTime() * 0.5) % 1; // speed
+    const t = (clock.getElapsedTime() * 0.5) % 1; // speed of pulse
     pulseRef.current.position.copy(
       start.clone().add(dir.clone().multiplyScalar(length * t))
     );
@@ -20,10 +25,9 @@ const PulseLine = ({ start, end }) => {
 
   return (
     <group>
-      {/* Static line */}
-      <line>
-        <bufferGeometry attach="geometry" setFromPoints={[start, end]} />
-        <lineBasicMaterial color="#2196f3" transparent opacity={0.4} />
+      {/* Static connection line */}
+      <line geometry={geometry}>
+        <lineBasicMaterial color="#2196f3" transparent opacity={0.35} linewidth={0.5} />
       </line>
 
       {/* Moving pulse */}
@@ -41,15 +45,15 @@ const InternetWeb = () => {
   const rings = useMemo(() => {
     const layers = [];
     const ringCounts = [8, 12, 16];
-    const radii = [7, 3.5, 6]; //ring radius for each
+    const radii = [7, 3.5, 6]; // ring radius for each
 
     ringCounts.forEach((count, i) => {
       const ring = [];
       for (let j = 0; j < count; j++) {
-        const angle = (j / count) * Math.PI * 15; //arrangement of orbs
+        const angle = (j / count) * Math.PI * 2; // spread around full circle
         const x = Math.cos(angle) * radii[i];
-        const y = (Math.random() - 0.5) * 5.5; //change in y creates vertical spread
-        const z = Math.sin(angle) * radii[i]; //z spread
+        const y = (Math.random() - 0.5) * 5.5; // vertical variation
+        const z = Math.sin(angle) * radii[i];
         ring.push(new THREE.Vector3(x, y, z));
       }
       layers.push(ring);
@@ -78,13 +82,13 @@ const InternetWeb = () => {
                 <meshStandardMaterial emissive="#4fc3f7" color="#4fc3f7" />
               </mesh>
 
-              {/* Connection to hub with pulse */}
+              {/* Connection to hub */}
               <PulseLine start={hub} end={pos} />
 
-              {/* Side connection (to next node in ring) with pulse */}
+              {/* Side connection to neighbor in ring */}
               <PulseLine
                 start={pos}
-                end={ring[(i + 1) % ring.length]} // wraps around
+                end={ring[(i + 1) % ring.length]} // wraps around to form a loop
               />
             </group>
           );
